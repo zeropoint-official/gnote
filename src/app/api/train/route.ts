@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient, DATABASE_ID, USER_PROFILE_COLLECTION } from "@/lib/appwrite-server";
-import { extractProfile, refineProfile } from "@/lib/ai/train";
+import { extractProfile, refineProfile, generateProfileFromAnswers } from "@/lib/ai/train";
 import { seedFromProfile } from "@/lib/ai/seed";
 import { ID, Query } from "node-appwrite";
-import type { ParsedProfile } from "@/types";
+import type { ManualTrainAnswers, ParsedProfile } from "@/types";
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, step, context, questions, answers } = await request.json();
+    const { userId, step, context, questions, answers, profile: importedProfile, manualAnswers } = await request.json();
 
     if (!userId || !step) {
       return NextResponse.json(
@@ -114,6 +114,156 @@ export async function POST(request: NextRequest) {
         profile: result.profile,
         followUpQuestions: result.followUpQuestions,
         trainingComplete: result.followUpQuestions.length === 0,
+      });
+    }
+
+    if (step === "chatgpt-import") {
+      if (!importedProfile) {
+        return NextResponse.json(
+          { error: "profile JSON is required for chatgpt-import step" },
+          { status: 400 }
+        );
+      }
+
+      const parsed = importedProfile as ParsedProfile;
+      if (!parsed.businesses || !parsed.projects || !parsed.interests || !parsed.people || !parsed.goals) {
+        return NextResponse.json(
+          { error: "Invalid profile structure — missing required fields" },
+          { status: 400 }
+        );
+      }
+
+      const existing = await databases.listDocuments(
+        DATABASE_ID,
+        USER_PROFILE_COLLECTION,
+        [Query.equal("userId", userId), Query.limit(1)]
+      );
+
+      const profileData = {
+        userId,
+        context: "[Imported from ChatGPT]",
+        profile: JSON.stringify(parsed),
+        trainingComplete: true,
+        lastTrainedAt: new Date().toISOString(),
+      };
+
+      if (existing.total > 0) {
+        await databases.updateDocument(
+          DATABASE_ID,
+          USER_PROFILE_COLLECTION,
+          existing.documents[0].$id,
+          profileData
+        );
+      } else {
+        await databases.createDocument(
+          DATABASE_ID,
+          USER_PROFILE_COLLECTION,
+          ID.unique(),
+          profileData
+        );
+      }
+
+      return NextResponse.json({
+        profile: parsed,
+        followUpQuestions: [],
+        trainingComplete: true,
+      });
+    }
+
+    if (step === "manual") {
+      const typedAnswers = manualAnswers as ManualTrainAnswers | null;
+      if (!typedAnswers) {
+        return NextResponse.json(
+          { error: "manualAnswers is required for manual step" },
+          { status: 400 }
+        );
+      }
+
+      const result = await generateProfileFromAnswers(typedAnswers, userId);
+
+      const contextSummary = [
+        typedAnswers.name && `Name: ${typedAnswers.name}`,
+        typedAnswers.work && `Work: ${typedAnswers.work}`,
+        typedAnswers.businesses.length > 0 && `Businesses: ${typedAnswers.businesses.map((b) => b.name).join(", ")}`,
+        typedAnswers.projects.length > 0 && `Projects: ${typedAnswers.projects.map((p) => p.name).join(", ")}`,
+        typedAnswers.goals.length > 0 && `Goals: ${typedAnswers.goals.join(", ")}`,
+        typedAnswers.interests.length > 0 && `Interests: ${typedAnswers.interests.join(", ")}`,
+        typedAnswers.people.length > 0 && `People: ${typedAnswers.people.map((p) => p.name).join(", ")}`,
+      ].filter(Boolean).join("\n");
+
+      const existing = await databases.listDocuments(
+        DATABASE_ID,
+        USER_PROFILE_COLLECTION,
+        [Query.equal("userId", userId), Query.limit(1)]
+      );
+
+      const profileData = {
+        userId,
+        context: contextSummary,
+        profile: JSON.stringify(result.profile),
+        trainingComplete: true,
+        lastTrainedAt: new Date().toISOString(),
+      };
+
+      if (existing.total > 0) {
+        await databases.updateDocument(
+          DATABASE_ID,
+          USER_PROFILE_COLLECTION,
+          existing.documents[0].$id,
+          profileData
+        );
+      } else {
+        await databases.createDocument(
+          DATABASE_ID,
+          USER_PROFILE_COLLECTION,
+          ID.unique(),
+          profileData
+        );
+      }
+
+      return NextResponse.json({
+        profile: result.profile,
+        followUpQuestions: [],
+        trainingComplete: true,
+      });
+    }
+
+    if (step === "update-profile") {
+      if (!importedProfile) {
+        return NextResponse.json(
+          { error: "profile is required for update-profile step" },
+          { status: 400 }
+        );
+      }
+
+      const parsed = importedProfile as ParsedProfile;
+
+      const existing = await databases.listDocuments(
+        DATABASE_ID,
+        USER_PROFILE_COLLECTION,
+        [Query.equal("userId", userId), Query.limit(1)]
+      );
+
+      if (existing.total === 0) {
+        return NextResponse.json(
+          { error: "No profile found — run training first" },
+          { status: 400 }
+        );
+      }
+
+      await databases.updateDocument(
+        DATABASE_ID,
+        USER_PROFILE_COLLECTION,
+        existing.documents[0].$id,
+        {
+          profile: JSON.stringify(parsed),
+          lastTrainedAt: new Date().toISOString(),
+        }
+      );
+
+      return NextResponse.json({
+        profile: parsed,
+        trainingComplete: true,
       });
     }
 

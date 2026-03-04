@@ -138,6 +138,16 @@ export interface ChatMessage {
   createdAt: string;
 }
 
+export interface ManualTrainAnswers {
+  name: string;
+  work: string;
+  businesses: { name: string; description: string }[];
+  projects: { name: string; description: string; status: string }[];
+  goals: string[];
+  interests: string[];
+  people: { name: string; role: string }[];
+}
+
 export interface AITrainResult {
   profile: ParsedProfile;
   followUpQuestions: string[];

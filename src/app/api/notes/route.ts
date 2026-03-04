@@ -160,6 +160,61 @@ export async function POST(request: NextRequest) {
   }
 }
 
+export async function DELETE(request: NextRequest) {
+  try {
+    const { noteId } = await request.json();
+
+    if (!noteId) {
+      return NextResponse.json({ error: "noteId is required" }, { status: 400 });
+    }
+
+    const { databases } = createAdminClient();
+
+    const note = await databases.getDocument(
+      DATABASE_ID,
+      ORGANIZED_NOTES_COLLECTION,
+      noteId
+    );
+
+    if (note.rawNoteId) {
+      await databases.deleteDocument(
+        DATABASE_ID,
+        RAW_NOTES_COLLECTION,
+        note.rawNoteId as string
+      ).catch(() => {});
+    }
+
+    await databases.deleteDocument(
+      DATABASE_ID,
+      ORGANIZED_NOTES_COLLECTION,
+      noteId
+    );
+
+    if (note.categoryId) {
+      const cat = await databases.getDocument(
+        DATABASE_ID,
+        CATEGORIES_COLLECTION,
+        note.categoryId as string
+      ).catch(() => null);
+
+      if (cat) {
+        const currentCount = (cat.noteCount as number) || 0;
+        await databases.updateDocument(
+          DATABASE_ID,
+          CATEGORIES_COLLECTION,
+          cat.$id,
+          { noteCount: Math.max(0, currentCount - 1) }
+        ).catch(() => {});
+      }
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error in DELETE /api/notes:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const userId = request.nextUrl.searchParams.get("userId");

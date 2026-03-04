@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import { SwipeDrawer } from "./swipe-drawer";
 import { NavDrawerContent } from "./nav-drawer";
 import { TaskDrawerContent } from "./task-drawer";
@@ -20,6 +20,10 @@ interface MobileShellProps {
   onTaskCreate: (title: string) => void;
   onTaskDelete: (taskId: string) => void;
   loadingTasks: boolean;
+  navOpen: boolean;
+  onNavOpenChange: (open: boolean) => void;
+  taskOpen: boolean;
+  onTaskOpenChange: (open: boolean) => void;
   children: React.ReactNode;
 }
 
@@ -39,10 +43,12 @@ export function MobileShell({
   onTaskCreate,
   onTaskDelete,
   loadingTasks,
+  navOpen,
+  onNavOpenChange,
+  taskOpen,
+  onTaskOpenChange,
   children,
 }: MobileShellProps) {
-  const [navOpen, setNavOpen] = useState(false);
-  const [taskOpen, setTaskOpen] = useState(false);
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
 
   const handleTouchStart = useCallback((e: TouchEvent) => {
@@ -70,15 +76,15 @@ export function MobileShell({
     }
 
     if (dx > SWIPE_MIN_DISTANCE && startX < EDGE_THRESHOLD && !taskOpen) {
-      setNavOpen(true);
+      onNavOpenChange(true);
     }
 
     if (dx < -SWIPE_MIN_DISTANCE && startX > screenWidth - EDGE_THRESHOLD && !navOpen) {
-      setTaskOpen(true);
+      onTaskOpenChange(true);
     }
 
     touchStartRef.current = null;
-  }, [navOpen, taskOpen]);
+  }, [navOpen, taskOpen, onNavOpenChange, onTaskOpenChange]);
 
   useEffect(() => {
     document.addEventListener("touchstart", handleTouchStart, { passive: true });
@@ -91,33 +97,22 @@ export function MobileShell({
 
   return (
     <div className="md:hidden flex flex-col flex-1 min-h-0 relative">
-      {/* Edge indicators */}
-      {!navOpen && !taskOpen && (
-        <>
-          <div className="fixed left-0 top-1/2 -translate-y-1/2 w-1 h-16 rounded-r-full bg-border/20 z-[90]" />
-          <div className="fixed right-0 top-1/2 -translate-y-1/2 w-1 h-16 rounded-l-full bg-border/20 z-[90]" />
-        </>
-      )}
-
-      {/* Main content */}
       {children}
 
-      {/* Nav Drawer (left) */}
-      <SwipeDrawer side="left" open={navOpen} onClose={() => setNavOpen(false)}>
+      <SwipeDrawer side="left" open={navOpen} onClose={() => onNavOpenChange(false)}>
         <NavDrawerContent
           mode={mode}
           onModeChange={onModeChange}
           onSettingsOpen={onSettingsOpen}
           onLogout={onLogout}
-          onClose={() => setNavOpen(false)}
+          onClose={() => onNavOpenChange(false)}
           userInitials={userInitials}
           userName={userName}
           userEmail={userEmail}
         />
       </SwipeDrawer>
 
-      {/* Task Drawer (right) */}
-      <SwipeDrawer side="right" open={taskOpen} onClose={() => setTaskOpen(false)}>
+      <SwipeDrawer side="right" open={taskOpen} onClose={() => onTaskOpenChange(false)}>
         <TaskDrawerContent
           tasks={tasks}
           onTaskToggle={onTaskToggle}

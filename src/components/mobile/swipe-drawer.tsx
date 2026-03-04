@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { motion, AnimatePresence, type PanInfo } from "framer-motion";
+import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type DrawerSide = "left" | "right";
@@ -67,8 +68,16 @@ export function SwipeDrawer({ side, open, onClose, children, className }: SwipeD
               className
             )}
           >
-            <div className="flex justify-center pt-3 pb-1">
-              <div className="w-8 h-1 rounded-full bg-border/50" />
+            <div className={cn(
+              "flex items-center pt-3 pb-1 px-3",
+              side === "left" ? "justify-end" : "justify-start"
+            )}>
+              <button
+                onClick={onClose}
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
             {children}
