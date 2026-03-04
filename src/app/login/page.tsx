@@ -32,7 +32,7 @@ export default function LoginPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-[100dvh] flex items-center justify-center bg-background">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -84,9 +84,9 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex bg-background overflow-y-auto">
+    <div className="min-h-[100dvh] flex bg-background overflow-y-auto">
       {/* Left panel - branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-primary/[0.03] border-r border-border/30 flex-col justify-between p-12">
+      <div className="hidden lg:flex lg:w-1/2 bg-primary/[0.03] border-r border-border/30 flex-col justify-between p-12 overflow-y-auto">
         <div>
           <div className="flex items-center gap-3 mb-16">
             <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
@@ -139,7 +139,7 @@ export default function LoginPage() {
       </div>
 
       {/* Right panel - auth form */}
-      <div className="flex-1 flex items-center justify-center px-6 py-12 min-h-0">
+      <div className="flex-1 flex items-center justify-center px-6 py-12 overflow-y-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

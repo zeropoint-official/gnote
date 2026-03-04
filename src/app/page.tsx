@@ -446,7 +446,7 @@ export default function AppShell() {
   );
 
   return (
-    <div className="h-screen flex bg-background">
+    <div className="h-screen flex bg-background overflow-hidden">
       {/* Desktop: icon rail + content */}
       <div className="hidden md:flex flex-1">
         <IconRail
