@@ -446,7 +446,7 @@ export default function AppShell() {
   );
 
   return (
-    <div className="h-screen flex bg-background overflow-hidden">
+    <div className="h-dvh flex bg-background overflow-hidden">
       {/* Desktop: icon rail + content */}
       <div className="hidden md:flex flex-1">
         <IconRail
@@ -464,7 +464,7 @@ export default function AppShell() {
       </div>
 
       {/* Mobile: header + swipe drawers + content */}
-      <div className="md:hidden flex flex-col flex-1">
+      <div className="md:hidden flex flex-col flex-1 min-h-0">
         <header className="h-11 border-b border-border/30 bg-background/80 backdrop-blur-xl flex items-center justify-between px-2 shrink-0 z-50">
           <button
             onClick={() => setMobileNavOpen(true)}
@@ -504,7 +504,7 @@ export default function AppShell() {
           taskOpen={mobileTaskOpen}
           onTaskOpenChange={setMobileTaskOpen}
         >
-          <main className="flex-1 flex flex-col min-w-0">
+          <main className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
             {mainContent}
           </main>
         </MobileShell>
