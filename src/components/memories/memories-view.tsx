@@ -21,12 +21,74 @@ import {
   X,
   FolderOpen,
   ChevronUp,
+  Briefcase,
+  FolderKanban,
+  User,
+  Users,
+  Heart,
+  Target,
+  Lightbulb,
+  GraduationCap,
+  DollarSign,
+  Dumbbell,
+  Plane,
+  Code,
+  Music,
+  Camera,
+  BookOpen,
+  Home,
+  ShoppingBag,
+  Utensils,
+  Car,
+  Globe,
+  Palette,
+  Gamepad2,
+  Wrench,
+  Calendar,
+  MessageCircle,
+  FileText,
+  type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
 import { NoteContent } from "@/components/note-content";
 import type { CategoryWithChildren, OrganizedNote } from "@/types";
+
+const CATEGORY_ICON_MAP: [RegExp, LucideIcon][] = [
+  [/business|company|venture|agency|startup/i, Briefcase],
+  [/project/i, FolderKanban],
+  [/personal|self|me|life/i, User],
+  [/contact|people|network/i, Users],
+  [/interest|hobby|passion/i, Heart],
+  [/goal|vision|ambition|plan/i, Target],
+  [/idea|brainstorm|concept/i, Lightbulb],
+  [/learn|education|course|study|school/i, GraduationCap],
+  [/finance|money|invest|budget|income/i, DollarSign],
+  [/health|fitness|workout|gym|exercise/i, Dumbbell],
+  [/travel|trip|vacation|flight/i, Plane],
+  [/code|dev|programming|software|tech|engineer/i, Code],
+  [/music|song|playlist|audio/i, Music],
+  [/camera|photo|video|film|cinema/i, Camera],
+  [/book|read|writing|blog|content/i, BookOpen],
+  [/home|house|apartment|real estate/i, Home],
+  [/shop|ecommerce|store|product/i, ShoppingBag],
+  [/food|recipe|restaurant|cook/i, Utensils],
+  [/car|vehicle|transport/i, Car],
+  [/marketing|social|brand|growth/i, Globe],
+  [/design|art|creative|ui|ux/i, Palette],
+  [/game|gaming|play/i, Gamepad2],
+  [/tool|resource|utility|setup/i, Wrench],
+  [/event|meeting|schedule|calendar/i, Calendar],
+  [/chat|conversation|communication/i, MessageCircle],
+];
+
+function getCategoryIcon(name: string): LucideIcon {
+  for (const [pattern, icon] of CATEGORY_ICON_MAP) {
+    if (pattern.test(name)) return icon;
+  }
+  return FileText;
+}
 
 interface MemoriesViewProps {
   categories: CategoryWithChildren[];
@@ -109,6 +171,7 @@ export function MemoriesView({
   }, [sortedNotes, search, activeCategoryId, categoryMap]);
 
   const activeCategoryName = activeCategoryId ? categoryMap[activeCategoryId] : null;
+  const ActiveFilterIcon = activeCategoryName ? getCategoryIcon(activeCategoryName) : FolderOpen;
 
   const handleNoteClick = useCallback((noteId: string) => {
     setExpandedNoteId((prev) => (prev === noteId ? null : noteId));
@@ -253,7 +316,7 @@ export function MemoriesView({
                   onClick={clearFilter}
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-medium hover:bg-primary/15 transition-colors"
                 >
-                  <FolderOpen className="w-3 h-3" />
+                  <ActiveFilterIcon className="w-3 h-3" />
                   {activeCategoryName}
                   <X className="w-3 h-3 ml-0.5 opacity-60" />
                 </button>
@@ -295,6 +358,7 @@ export function MemoriesView({
               {filteredNotes.map((note) => {
                 const isExpanded = expandedNoteId === note.$id;
                 const catName = categoryMap[note.categoryId];
+                const CatIcon = catName ? getCategoryIcon(catName) : null;
 
                 return (
                   <div
@@ -313,14 +377,15 @@ export function MemoriesView({
                         >
                           {/* Collapse header */}
                           <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/30 bg-muted/30">
-                            {catName && (
+                            {catName && CatIcon && (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleCategoryFilter(note.categoryId);
                                 }}
-                                className="text-[10px] font-medium text-primary/70 hover:text-primary transition-colors"
+                                className="flex items-center gap-1.5 text-[10px] font-medium text-primary/70 hover:text-primary transition-colors"
                               >
+                                <CatIcon className="w-3 h-3" />
                                 {catName}
                               </button>
                             )}
@@ -356,37 +421,40 @@ export function MemoriesView({
                             expandedNoteId && "opacity-40"
                           )}
                         >
-                          {/* Category pill */}
-                          {catName && (
-                            <span
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleCategoryFilter(note.categoryId);
-                              }}
-                              className="inline-block text-[10px] font-medium text-muted-foreground/70 hover:text-primary mb-1.5 transition-colors"
-                            >
-                              {catName}
-                            </span>
-                          )}
-
-                          {/* Title row with priority dot */}
-                          <div className="flex items-start gap-2">
-                            <div className={cn(
-                              "w-1.5 h-1.5 rounded-full shrink-0 mt-[5px]",
-                              priorityDots[note.priority] || "bg-muted-foreground/30"
-                            )} />
-                            <p className="text-[13px] font-medium leading-snug line-clamp-2 flex-1">
-                              {note.title}
-                            </p>
+                          {/* Title row with category icon + priority dot */}
+                          <div className="flex items-start gap-2.5">
+                            {CatIcon && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCategoryFilter(note.categoryId);
+                                }}
+                                className="shrink-0 mt-[1px] text-muted-foreground/50 hover:text-primary transition-colors"
+                                title={catName}
+                              >
+                                <CatIcon className="w-4 h-4" />
+                              </button>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start gap-1.5">
+                                <div className={cn(
+                                  "w-1.5 h-1.5 rounded-full shrink-0 mt-[5px]",
+                                  priorityDots[note.priority] || "bg-muted-foreground/30"
+                                )} />
+                                <p className="text-[13px] font-medium leading-snug line-clamp-2 flex-1">
+                                  {note.title}
+                                </p>
+                              </div>
+                            </div>
                           </div>
 
                           {/* Content preview */}
-                          <p className="text-[11px] text-muted-foreground mt-1 ml-3.5 line-clamp-2 leading-relaxed">
+                          <p className="text-[11px] text-muted-foreground mt-1 ml-[26px] line-clamp-2 leading-relaxed">
                             {note.content.replace(/[#*_`>\-\[\]]/g, "").slice(0, 200)}
                           </p>
 
                           {/* Timestamp */}
-                          <p className="text-[10px] text-muted-foreground/50 mt-2 ml-3.5">
+                          <p className="text-[10px] text-muted-foreground/50 mt-2 ml-[26px]">
                             {formatDistanceToNow(new Date(note.$createdAt), { addSuffix: true })}
                           </p>
                         </motion.button>
