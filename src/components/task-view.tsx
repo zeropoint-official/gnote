@@ -12,6 +12,7 @@ import {
   ListTodo,
   ChevronDown,
   Trash2,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -22,13 +23,14 @@ type TaskFilter = "all" | "pending" | "done";
 interface TaskViewProps {
   tasks: Task[];
   onTaskToggle: (taskId: string, newStatus: "pending" | "done") => void;
-  onTaskCreate: (title: string) => void;
+  onTaskCreate: (title: string) => Promise<void>;
   onTaskDelete: (taskId: string) => void;
   loading?: boolean;
 }
 
 export function TaskView({ tasks, onTaskToggle, onTaskCreate, onTaskDelete, loading }: TaskViewProps) {
   const [newTask, setNewTask] = useState("");
+  const [creating, setCreating] = useState(false);
   const [filter, setFilter] = useState<TaskFilter>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [showDone, setShowDone] = useState(false);
@@ -40,11 +42,17 @@ export function TaskView({ tasks, onTaskToggle, onTaskCreate, onTaskDelete, load
   const displayPending = filter === "done" ? [] : pendingTasks;
   const displayDone = filter === "pending" ? [] : doneTasks;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTask.trim()) return;
-    onTaskCreate(newTask.trim());
-    setNewTask("");
+    if (!newTask.trim() || creating) return;
+    setCreating(true);
+    try {
+      await onTaskCreate(newTask.trim());
+      setNewTask("");
+    } catch {
+    } finally {
+      setCreating(false);
+    }
   };
 
   if (loading) {
@@ -101,10 +109,20 @@ export function TaskView({ tasks, onTaskToggle, onTaskCreate, onTaskDelete, load
             onChange={(e) => setNewTask(e.target.value)}
             placeholder="Add a new task..."
             className="flex-1 h-8 text-xs"
+            disabled={creating}
           />
-          <Button type="submit" size="sm" disabled={!newTask.trim()} className="h-8 px-3 gap-1">
-            <Plus className="w-3 h-3" />
-            Add
+          <Button type="submit" size="sm" disabled={!newTask.trim() || creating} className="h-8 px-3 gap-1">
+            {creating ? (
+              <>
+                <Sparkles className="w-3 h-3 animate-pulse" />
+                <span className="hidden sm:inline">Writing...</span>
+              </>
+            ) : (
+              <>
+                <Plus className="w-3 h-3" />
+                Add
+              </>
+            )}
           </Button>
         </form>
       </div>

@@ -11,7 +11,7 @@ type InputMode = "note" | "task";
 
 interface NoteInputProps {
   onSubmit: (content: string) => Promise<void>;
-  onTaskCreate: (title: string) => void;
+  onTaskCreate: (title: string) => Promise<void>;
 }
 
 type SubmitState = "idle" | "sending" | "organizing" | "done";
@@ -31,13 +31,20 @@ export function NoteInput({ onSubmit, onTaskCreate }: NoteInputProps) {
     if (!content.trim() || state !== "idle") return;
 
     if (inputMode === "task") {
-      onTaskCreate(content.trim());
-      setContent("");
-      setState("done");
-      setTimeout(() => {
+      const taskContent = content;
+      setState("sending");
+      try {
+        setState("organizing");
+        await onTaskCreate(taskContent.trim());
+        setState("done");
+        setContent("");
+        setTimeout(() => {
+          setState("idle");
+          textareaRef.current?.focus();
+        }, 1500);
+      } catch {
         setState("idle");
-        textareaRef.current?.focus();
-      }, 1000);
+      }
       return;
     }
 
@@ -190,7 +197,7 @@ export function NoteInput({ onSubmit, onTaskCreate }: NoteInputProps) {
                   className="flex items-center gap-1.5"
                 >
                   <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-                  <span>Organizing</span>
+                  <span>{inputMode === "task" ? "Rewriting" : "Organizing"}</span>
                 </motion.div>
               )}
               {state === "done" && (

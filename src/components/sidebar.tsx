@@ -32,7 +32,7 @@ interface SidebarProps {
   onSelectNote: (noteId: string, categoryId: string) => void;
   onStatusFilterChange: (status: "active" | "archived") => void;
   onTaskToggle: (taskId: string, newStatus: "pending" | "done") => void;
-  onTaskCreate: (title: string) => void;
+  onTaskCreate: (title: string) => Promise<void>;
   onReorganize: () => void;
   onSettingsOpen: () => void;
   reorganizing: boolean;

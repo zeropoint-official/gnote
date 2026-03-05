@@ -215,15 +215,19 @@ export default function AppShell() {
 
   const handleTaskCreate = async (title: string) => {
     if (!user) return;
-    try {
-      const res = await fetch("/api/tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.$id, title }),
+    const res = await fetch("/api/tasks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: user.$id, title }),
+    });
+    const data = await res.json();
+    if (!res.ok) { toast.error("Failed to create task"); throw new Error("Failed"); }
+    if (data.task) {
+      setTasks((prev) => [data.task, ...prev]);
+      toast.success("Task created", {
+        description: data.rewritten ? "AI cleaned up your task" : undefined,
       });
-      const data = await res.json();
-      if (data.task) setTasks((prev) => [data.task, ...prev]);
-    } catch { toast.error("Failed to create task"); }
+    }
   };
 
   const handleTaskDelete = async (taskId: string) => {
@@ -529,7 +533,7 @@ function NoteMode({
   recentNotes,
 }: {
   onSubmit: (content: string) => Promise<void>;
-  onTaskCreate: (title: string) => void;
+  onTaskCreate: (title: string) => Promise<void>;
   recentNotes: RawNote[];
 }) {
   return (

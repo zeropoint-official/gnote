@@ -17,7 +17,7 @@ interface MobileShellProps {
   userEmail?: string;
   tasks: Task[];
   onTaskToggle: (taskId: string, newStatus: "pending" | "done") => void;
-  onTaskCreate: (title: string) => void;
+  onTaskCreate: (title: string) => Promise<void>;
   onTaskDelete: (taskId: string) => void;
   loadingTasks: boolean;
   navOpen: boolean;

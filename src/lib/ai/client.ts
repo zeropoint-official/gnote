@@ -23,7 +23,8 @@ export type UsageOperation =
   | "chat-context"
   | "train-extract"
   | "train-refine"
-  | "seed";
+  | "seed"
+  | "task-rewrite";
 
 interface TrackedCallOptions {
   userId: string;

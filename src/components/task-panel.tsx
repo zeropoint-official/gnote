@@ -12,23 +12,30 @@ interface TaskPanelProps {
   tasks: Task[];
   userId: string;
   onTaskToggle: (taskId: string, newStatus: "pending" | "done") => void;
-  onTaskCreate: (title: string) => void;
+  onTaskCreate: (title: string) => Promise<void>;
   loading?: boolean;
 }
 
 export function TaskPanel({ tasks, userId, onTaskToggle, onTaskCreate, loading }: TaskPanelProps) {
   const [newTask, setNewTask] = useState("");
   const [showInput, setShowInput] = useState(false);
+  const [creating, setCreating] = useState(false);
 
   const pendingTasks = tasks.filter((t) => t.status === "pending");
   const doneTasks = tasks.filter((t) => t.status === "done").slice(0, 3);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTask.trim()) return;
-    onTaskCreate(newTask.trim());
-    setNewTask("");
-    setShowInput(false);
+    if (!newTask.trim() || creating) return;
+    setCreating(true);
+    try {
+      await onTaskCreate(newTask.trim());
+      setNewTask("");
+      setShowInput(false);
+    } catch {
+    } finally {
+      setCreating(false);
+    }
   };
 
   return (
@@ -60,9 +67,10 @@ export function TaskPanel({ tasks, userId, onTaskToggle, onTaskCreate, loading }
             <Input
               value={newTask}
               onChange={(e) => setNewTask(e.target.value)}
-              placeholder="New task..."
+              placeholder={creating ? "AI is rewriting..." : "New task..."}
               className="h-7 text-xs mb-1"
               autoFocus
+              disabled={creating}
               onKeyDown={(e) => {
                 if (e.key === "Escape") setShowInput(false);
               }}

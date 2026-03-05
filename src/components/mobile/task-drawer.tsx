@@ -23,7 +23,7 @@ type TaskFilter = "all" | "pending" | "done";
 interface TaskDrawerContentProps {
   tasks: Task[];
   onTaskToggle: (taskId: string, newStatus: "pending" | "done") => void;
-  onTaskCreate: (title: string) => void;
+  onTaskCreate: (title: string) => Promise<void>;
   onTaskDelete: (taskId: string) => void;
   loading?: boolean;
 }
@@ -36,17 +36,24 @@ export function TaskDrawerContent({
   loading,
 }: TaskDrawerContentProps) {
   const [newTask, setNewTask] = useState("");
+  const [creating, setCreating] = useState(false);
   const [filter, setFilter] = useState<TaskFilter>("all");
   const [showDone, setShowDone] = useState(false);
 
   const pendingTasks = tasks.filter((t) => t.status === "pending");
   const doneTasks = tasks.filter((t) => t.status === "done");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTask.trim()) return;
-    onTaskCreate(newTask.trim());
-    setNewTask("");
+    if (!newTask.trim() || creating) return;
+    setCreating(true);
+    try {
+      await onTaskCreate(newTask.trim());
+      setNewTask("");
+    } catch {
+    } finally {
+      setCreating(false);
+    }
   };
 
   return (
@@ -86,9 +93,10 @@ export function TaskDrawerContent({
             onChange={(e) => setNewTask(e.target.value)}
             placeholder="Add a task..."
             className="flex-1 h-8 text-xs"
+            disabled={creating}
           />
-          <Button type="submit" size="sm" disabled={!newTask.trim()} className="h-8 w-8 p-0">
-            <Plus className="w-3.5 h-3.5" />
+          <Button type="submit" size="sm" disabled={!newTask.trim() || creating} className="h-8 w-8 p-0">
+            {creating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
           </Button>
         </form>
       </div>

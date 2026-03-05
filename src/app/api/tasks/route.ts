@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient, DATABASE_ID, TASKS_COLLECTION } from "@/lib/appwrite-server";
 import { ID, Query } from "node-appwrite";
+import { rewriteTask } from "@/lib/ai/organize";
 
 export async function GET(request: NextRequest) {
   try {
@@ -42,22 +43,24 @@ export async function POST(request: NextRequest) {
 
     const { databases } = createAdminClient();
 
+    const rewritten = await rewriteTask(title, userId);
+
     const task = await databases.createDocument(
       DATABASE_ID,
       TASKS_COLLECTION,
       ID.unique(),
       {
         userId,
-        title,
-        description: description || "",
+        title: rewritten.title,
+        description: rewritten.description || description || "",
         status: "pending",
         sourceNoteId: null,
-        dueDate: dueDate || null,
+        dueDate: rewritten.dueDate || dueDate || null,
         createdAt: new Date().toISOString(),
       }
     );
 
-    return NextResponse.json({ task });
+    return NextResponse.json({ task, rewritten: true });
   } catch (error) {
     console.error("Error in POST /api/tasks:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

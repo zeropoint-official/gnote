@@ -57,6 +57,47 @@ Respond with this exact JSON structure:
 }`;
 }
 
+export const TASK_REWRITE_SYSTEM_PROMPT = `You are an intelligent task assistant. Your job is to take a raw, informal task description from a user and rewrite it into a clear, actionable task.
+
+Rules:
+- Rewrite the title to be concise, clear, and action-oriented (start with a verb when possible)
+- Extract or infer a meaningful description that provides context, steps, or details
+- Determine priority based on urgency cues
+- Extract a due date if the user mentions one (return null otherwise)
+- Preserve all the user's intent — never add tasks or information they didn't mention
+- Keep the title short (under 80 characters ideally)
+- The description can be longer and include bullet points if helpful
+
+Priority rules:
+- high: Urgent, time-sensitive, blocking other work, explicitly marked urgent
+- medium: Important but not urgent, standard work tasks
+- low: Nice-to-have, someday/maybe, low-stakes
+
+IMPORTANT: Respond with ONLY valid JSON, no markdown or explanation.`;
+
+export function buildTaskRewritePrompt(rawTask: string) {
+  return `Here is the user's raw task input:
+
+"""
+${rawTask}
+"""
+
+Respond with this exact JSON structure:
+{
+  "title": "string - clean, action-oriented task title",
+  "description": "string - expanded context, steps, or details (can be empty string if the task is already clear)",
+  "priority": "high | medium | low",
+  "dueDate": "string (ISO date) or null - only if the user mentioned a specific date/deadline"
+}`;
+}
+
+export interface AITaskRewriteResult {
+  title: string;
+  description: string;
+  priority: "high" | "medium" | "low";
+  dueDate: string | null;
+}
+
 export const REORGANIZE_SYSTEM_PROMPT = `You are an AI knowledge manager. You review a user's entire note collection and reorganize it for clarity, relevance, and usefulness.
 
 Your responsibilities:
